@@ -7,7 +7,8 @@ import os, sys
 # Utilty to read BER Asn1 File in Python3 with GUI Tk
 #
 # v1.0 - First Version
-# v1.1 - 07/09/2020 - Add TAP Notation and Tag Hex Value 
+# v1.1 - 07/09/2020 - Add TAP Notation and Tag Hex Value
+# v1.2 - 08/09/2020 - Add offset Start and offset End 
 
 class Application(object):
 
@@ -43,7 +44,7 @@ class Application(object):
 			self.txtTrad.insert(INSERT,"I/O Error (%s): %s" % (e.errno, e.strerror))
 		return aByte
 
-	def getTag(self, filea, iLevel):
+	def getTag(self, filea, iLevel, offSetTo):
 		startByte=filea.tell()
 		taghex=self.readAsn1(filea)
 
@@ -140,7 +141,9 @@ class Application(object):
 
 			iLevel = iLevel + 1
 		while ( ((length > 0) and ((filea.tell()) - startByte + 1) <= length) or ((length < 0) and self.CtrlInfinitiveEnd(filea) == 0) ):
-			if self.getTag(filea,iLevel):
+			if offSetTo > 0 and filea.tell() > offSetTo:
+				break
+			if self.getTag(filea,iLevel,offSetTo):
 				break
 
 		iLevel=iLevel-1
@@ -176,10 +179,10 @@ class Application(object):
 		self.txtTrad.grid(column=1, row=1, columnspan=5, rowspan=6, sticky=(N, S, E, W))
 
 # Offset Managment to develop
-#		self.offsetFrom.grid(column=2,row=0, padx=5, pady=5)
-#		self.offsetEntryF.grid(column=3,row=0, padx=5, pady=5)
-#		self.offsetTo.grid(column=4,row=0,padx=5, pady=5) 
-#		self.offsetEntryT.grid(column=5,row=0,padx=5, pady=5, disable=)
+		self.offsetFrom.grid(column=2,row=0, padx=5, pady=5)
+		self.offsetEntryF.grid(column=3,row=0, padx=5, pady=5)
+		self.offsetTo.grid(column=4,row=0,padx=5, pady=5) 
+		self.offsetEntryT.grid(column=5,row=0,padx=5, pady=5)
 
 		self.select.grid(column=0,row=1, sticky=(N, E, W), padx=5, pady=5)
 		self.save.grid(column=0,row=2, sticky=(N, E, W), padx=5, pady=5)
@@ -205,30 +208,68 @@ class Application(object):
 		self.content.rowconfigure(5, weight=1)
 		self.content.rowconfigure(6, weight=1)
 
-		self.parent.title('PyAsn1Tk 1.1')
+		self.parent.title(titleApp)
+
+	def popup_msg(self, msg):
+		win = Toplevel()
+		win.wm_title("Error Msg")
+
+		l = Label(win, text=msg)
+		l.grid(row=0, column=0)
+
+		b = Button(win, text="Okay", command=win.destroy)
+		b.grid(row=1, column=0)
+
+	def is_number(self, value):
+		try:
+			int(value)
+			return True
+		except:
+			return False		
 
 	def ReadButton_Click(self):
-		filename = filedialog.askopenfilename()
-		
-		if os.path.isfile(filename):
-			self.limpia()
-			fileasn1=open(filename,"rb")
-			iLevel = 0
-			self.getTag(fileasn1,iLevel)
-			fileasn1.close()
+		if (len(self.offsetEntryF.get()) > 0 and self.is_number(self.offsetEntryF.get()) == False) or (len(self.offsetEntryT.get()) > 0 and self.is_number(self.offsetEntryT.get()) == False):
+			self.popup_msg("OffSet From or OffSet To are not numerical.")
 		else:
-			self.txtTrad.delete(1.0, END)
-			self.txtTrad.insert(INSERT,"File " + filename + " No Exists.")
+			if ( (len(self.offsetEntryF.get()) > 0) and (len(self.offsetEntryT.get()) > 0) and int(self.offsetEntryT.get()) <= int(self.offsetEntryF.get()) ):
+				self.popup_msg("OffSet From is greater of equal to OffSet To.")
+			else:
+				if len(self.offsetEntryF.get()) > 0 :
+					offSetFrom = int(self.offsetEntryF.get())
+				else:
+					offSetFrom = 0
+
+				if len(self.offsetEntryT.get()) > 0 :
+					offSetTo = int(self.offsetEntryT.get())
+				else:
+					offSetTo = 0
+
+				filename = filedialog.askopenfilename()
+				if len(filename) > 0:	
+					if os.path.isfile(filename):
+						self.limpia()
+						fileasn1=open(filename,"rb")
+						iLevel = 0
+						if offSetFrom > 0:
+							fileasn1.seek(offSetFrom)
+						file_stats = os.stat(filename)	
+						self.txtTrad.insert(INSERT,	"ASN1 FILE %s SIZE : %d\n\n" % (os.path.basename(filename),file_stats.st_size))
+						self.getTag(fileasn1,iLevel,offSetTo)
+						fileasn1.close()
+					else:
+						self.txtTrad.delete(1.0, END)
+						self.txtTrad.insert(INSERT,"File " + filename + " No Exists.")
 			
 	def SaveButton_Click(self):
 		filename = filedialog.asksaveasfilename()
 		
-		if os.path.isdir(filename):
-		    self.txtTrad.insert(INSERT," Error " + filename + " is a Directory.")
-		else:
-			fileasn1s=open(filename,"w")
-			fileasn1s.write(self.txtTrad.get(1.0,END))
-			fileasn1s.close()
+		if len(filename) > 0:
+			if os.path.isdir(filename):
+				self.txtTrad.insert(INSERT," Error " + filename + " is a Directory.")
+			else:
+				fileasn1s=open(filename,"w")
+				fileasn1s.write(self.txtTrad.get(1.0,END))
+				fileasn1s.close()
 
 	def ClearButton_Click(self):
 		self.txtTrad.delete(1.0, END)
@@ -237,6 +278,9 @@ class Application(object):
 
 	def Quit(self):
 		self.parent.destroy()
+		root.destroy()
+
+titleApp = 'PyAsn1Tk 1.2'
 
 root = Tk()
 PyAsn1Tk = Application(root)
