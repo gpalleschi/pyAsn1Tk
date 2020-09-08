@@ -4,7 +4,7 @@
 
 **A visual Asn1 BER reader written in Python using TKinter embedded package. This tool permits read and decode a binary file in ASN1 BER codification and saving visual result in a file. **
 
-![pyAsn1Tk](https://drive.google.com/uc?export=view&id=1E5H1V7LjQi7oZbeHXNUBqAKnq_N03B2F)  
+![image](https://drive.google.com/uc?export=view&id=1E5H1V7LjQi7oZbeHXNUBqAKnq_N03B2F)  
 
 ## Prerequisites
 
