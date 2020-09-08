@@ -6,6 +6,8 @@
 
 ![image](https://drive.google.com/uc?export=view&id=1R08lLw_LtcVjt0q3bVw45XZQl_KL2HDo)  
 
+It's present a pyAsn1Tk.exe in /dist directory created for windows environment.
+
 ## Prerequisites
 
 `Python 3.x`  
