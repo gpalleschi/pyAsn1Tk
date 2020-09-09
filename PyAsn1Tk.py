@@ -9,6 +9,7 @@ import os, sys
 # v1.0 - First Version
 # v1.1 - 07/09/2020 - Add TAP Notation and Tag Hex Value
 # v1.2 - 08/09/2020 - Add offset Start and offset End 
+# v1.3 - 09/09/2020 - Add scrollbar to TXT widget and Icon
 
 class Application(object):
 
@@ -154,7 +155,12 @@ class Application(object):
 		self.parent= parent
 #		self.content = Frame(self.parent, padding=(5,5,5,5))
 		self.content = Frame(self.parent)
-		self.txtTrad = Text(self.content, relief="sunken", width=50, height=30)
+
+# Vertical (y) Scroll Bar
+		self.scroll = Scrollbar(self.content)
+		self.txtTrad = Text(self.content, relief="sunken", width=50, height=30, yscrollcommand=self.scroll.set)
+#		self.scroll.config(command=self.txtTrad.yview)
+
 		self.offsetFrom = Label(self.content, text="Offset From")
 		self.offsetTo = Label(self.content, text="Offset To")
 		self.offsetEntryF = Entry(self.content)
@@ -176,7 +182,10 @@ class Application(object):
 
 		self.content.grid(column=0, row=0, sticky=(N, S, E, W))
 
+		self.scroll.grid(column=6, row=1, rowspan=6, sticky=(N, S, E, W))
 		self.txtTrad.grid(column=1, row=1, columnspan=5, rowspan=6, sticky=(N, S, E, W))
+
+		self.scroll.config(command=self.txtTrad.yview)
 
 # Offset Managment to develop
 		self.offsetFrom.grid(column=2,row=0, padx=5, pady=5)
@@ -280,9 +289,17 @@ class Application(object):
 		self.parent.destroy()
 		root.destroy()
 
-titleApp = 'PyAsn1Tk 1.2'
+titleApp = 'PyAsn1Tk 1.3'
+fileicon = 'icon\pyAsn1Tk.ico'
+
+if not hasattr(sys, "frozen"):
+	fileicon = os.path.join(os.path.dirname(__file__), fileicon) 
+else:  
+	fileicon = os.path.join(sys.prefix, fileicon)
 
 root = Tk()
 PyAsn1Tk = Application(root)
-    
+
+if os.path.isfile(fileicon):
+	root.iconbitmap(default=fileicon)    
 root.mainloop() 
