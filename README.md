@@ -1,4 +1,5 @@
-![image](icon/pyAsn1Tk.ico)  
+<img src="icon/pyAsn1Tk.ico" alt="Kitten"
+	title="A cute kitten" width="100" height="100" />
 # pyAsn1Tk 
 
 ## Description
