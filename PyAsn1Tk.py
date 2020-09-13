@@ -1,7 +1,11 @@
 from tkinter import *
 from tkinter import filedialog
+from tkinter import ttk
 import os.path
 import os, sys
+
+import threading
+import time
 
 #
 # Utilty to read BER Asn1 File in Python3 with GUI Tk
@@ -10,8 +14,46 @@ import os, sys
 # v1.1 - 07/09/2020 - Add TAP Notation and Tag Hex Value
 # v1.2 - 08/09/2020 - Add offset Start and offset End 
 # v1.3 - 09/09/2020 - Add scrollbar to TXT widget and Icon
+# v1.4 - 13/09/2020 - Add Threads Managment and Progress Bar
 
 class Application(object):
+
+	def progress_file(self, t1, fileasn1, filedim):
+		win = Toplevel(root)
+		win.resizable(height = False, width = False)
+		win.title("Reading File")
+		win.rowconfigure(0, weight=1)
+		win.rowconfigure(1, weight=1)
+		win.rowconfigure(2, weight=1)
+		win.rowconfigure(3, weight=1)
+		win.columnconfigure(0, weight=1)
+		win.columnconfigure(2, weight=1)
+		progress = ttk.Progressbar(win, orient = HORIZONTAL, 
+            length = 100, mode = 'determinate') 
+		progress.grid(row=1, column=1)
+#		b = Button(win, text="Okay", command=win.destroy)
+#		b.grid(row=3, column=1)
+		progress['value'] = 0
+		t1.join(timeout=1)
+		while t1.isAlive() is True:
+			progress['value'] = fileasn1.tell()*100/filedim
+			t1.join(timeout=1)
+#			print("join t1 %s con timeout 1 Thread %d tell fileasn1 %d" % (t1.isAlive(), threading.active_count(),fileasn1.tell()))
+#		print("close fileasn1 %d - %s Threads %d" % (fileasn1.tell(),t1.isAlive(),threading.active_count()))
+		progress['value'] = fileasn1.tell()*100/filedim
+		fileasn1.close()
+#		print("exit progress_file")
+		win.destroy()
+
+	def checkT1(self, t1, fileasn1):
+		print("join t1 %s con timeout 1 Thread %d" % (t1.isAlive(), threading.active_count()))
+		t1.join(timeout=1)
+		while t1.isAlive() is True:
+			t1.join(timeout=1)
+			print("join t1 %s con timeout 1 Thread %d tell fileasn1 %d" % (t1.isAlive(), threading.active_count(),fileasn1.tell()))
+		print("close fileasn1 %d - %s Threads %d" % (fileasn1.tell(),t1.isAlive(),threading.active_count()))
+		fileasn1.close()
+		print("exit checkT1")
 
 	def limpia(self):
 		self.txtTrad.delete(1.0, END)
@@ -46,6 +88,8 @@ class Application(object):
 		return aByte
 
 	def getTag(self, filea, iLevel, offSetTo):
+
+#		print("In GetTag")
 		startByte=filea.tell()
 		taghex=self.readAsn1(filea)
 
@@ -127,10 +171,10 @@ class Application(object):
 		for i in range(iLevel):
 			sIndent="\t%s" % sIndent
 
+
 		sTagToPrint=""
 		if length < 0:
 			sTagToPrint="%s%s length : indefinite" % (sIndent,CodeTag)
-			
 		else:
 			sTagToPrint="%s%s length : %d" % (sIndent,CodeTag,length)
 
@@ -148,6 +192,7 @@ class Application(object):
 				break
 
 		iLevel=iLevel-1
+
 		return 0
 
 # Tk Interface Definicion
@@ -263,8 +308,13 @@ class Application(object):
 							fileasn1.seek(offSetFrom)
 						file_stats = os.stat(filename)	
 						self.txtTrad.insert(INSERT,	"ASN1 FILE %s SIZE : %d\n\n" % (os.path.basename(filename),file_stats.st_size))
-						self.getTag(fileasn1,iLevel,offSetTo)
-						fileasn1.close()
+#						self.getTag(fileasn1,iLevel,offSetTo)
+# Start Thread
+						t1 = threading.Thread(target=self.getTag, args=(fileasn1,iLevel,offSetTo,), daemon=None)
+						t1.start()
+						t2 = threading.Thread(target=self.progress_file, args=(t1,fileasn1,file_stats.st_size,))
+						t2.start()
+#						fileasn1.close()
 					else:
 						self.txtTrad.delete(1.0, END)
 						self.txtTrad.insert(INSERT,"File " + filename + " No Exists.")
@@ -289,7 +339,7 @@ class Application(object):
 		self.parent.destroy()
 		root.destroy()
 
-titleApp = 'PyAsn1Tk 1.3'
+titleApp = 'PyAsn1Tk 1.4'
 fileicon = 'icon\pyAsn1Tk.ico'
 
 if not hasattr(sys, "frozen"):
@@ -302,4 +352,5 @@ PyAsn1Tk = Application(root)
 
 if os.path.isfile(fileicon):
 	root.iconbitmap(default=fileicon)    
+
 root.mainloop() 
