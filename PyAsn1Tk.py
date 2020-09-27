@@ -15,8 +15,13 @@ import time
 # v1.2 - 08/09/2020 - Add offset Start and offset End 
 # v1.3 - 09/09/2020 - Add scrollbar to TXT widget and Icon
 # v1.4 - 13/09/2020 - Add Threads Managment and Progress Bar
+# v1.5 - 27/09/2020 - Add Stop Button during reading file
 
 class Application(object):
+	
+	def stopThread(self, t1):
+		global stop_threads
+		stop_threads = True
 
 	def progress_file(self, t1, fileasn1, filedim):
 		win = Toplevel(root)
@@ -31,8 +36,8 @@ class Application(object):
 		progress = ttk.Progressbar(win, orient = HORIZONTAL, 
             length = 100, mode = 'determinate') 
 		progress.grid(row=1, column=1)
-#		b = Button(win, text="Okay", command=win.destroy)
-#		b.grid(row=3, column=1)
+		b = Button(win, text="Stop", command= lambda: self.stopThread(t1, ))
+		b.grid(row=3, column=1)
 		progress['value'] = 0
 		t1.join(timeout=1)
 		while t1.isAlive() is True:
@@ -44,16 +49,6 @@ class Application(object):
 		fileasn1.close()
 #		print("exit progress_file")
 		win.destroy()
-
-	def checkT1(self, t1, fileasn1):
-		print("join t1 %s con timeout 1 Thread %d" % (t1.isAlive(), threading.active_count()))
-		t1.join(timeout=1)
-		while t1.isAlive() is True:
-			t1.join(timeout=1)
-			print("join t1 %s con timeout 1 Thread %d tell fileasn1 %d" % (t1.isAlive(), threading.active_count(),fileasn1.tell()))
-		print("close fileasn1 %d - %s Threads %d" % (fileasn1.tell(),t1.isAlive(),threading.active_count()))
-		fileasn1.close()
-		print("exit checkT1")
 
 	def limpia(self):
 		self.txtTrad.delete(1.0, END)
@@ -186,6 +181,9 @@ class Application(object):
 
 			iLevel = iLevel + 1
 		while ( ((length > 0) and ((filea.tell()) - startByte + 1) <= length) or ((length < 0) and self.CtrlInfinitiveEnd(filea) == 0) ):
+			global stop_threads
+			if stop_threads == True:
+				break
 			if offSetTo > 0 and filea.tell() > offSetTo:
 				break
 			if self.getTag(filea,iLevel,offSetTo):
@@ -310,9 +308,11 @@ class Application(object):
 						self.txtTrad.insert(INSERT,	"ASN1 FILE %s SIZE : %d\n\n" % (os.path.basename(filename),file_stats.st_size))
 #						self.getTag(fileasn1,iLevel,offSetTo)
 # Start Thread
-						t1 = threading.Thread(target=self.getTag, args=(fileasn1,iLevel,offSetTo,), daemon=None)
+						global stop_threads
+						stop_threads = False
+						t1 = threading.Thread(target=self.getTag, args=(fileasn1,iLevel,offSetTo, ), daemon=None)
 						t1.start()
-						t2 = threading.Thread(target=self.progress_file, args=(t1,fileasn1,file_stats.st_size,))
+						t2 = threading.Thread(target=self.progress_file, args=(t1,fileasn1,file_stats.st_size, ))
 						t2.start()
 #						fileasn1.close()
 					else:
@@ -339,7 +339,7 @@ class Application(object):
 		self.parent.destroy()
 		root.destroy()
 
-titleApp = 'PyAsn1Tk 1.4'
+titleApp = 'PyAsn1Tk 1.5'
 fileicon = 'icon\pyAsn1Tk.ico'
 
 if not hasattr(sys, "frozen"):
@@ -347,6 +347,7 @@ if not hasattr(sys, "frozen"):
 else:  
 	fileicon = os.path.join(sys.prefix, fileicon)
 
+stop_threads = False
 root = Tk()
 PyAsn1Tk = Application(root)
 
