@@ -18,6 +18,15 @@ import time
 # v1.5 - 27/09/2020 - Add Stop Button during reading file
 # v2.0 - Add Convert File
 
+class tagType:
+	def __init__(self, convType, descrTag):
+		self.convType = convType
+		self.descrTag = descrTag
+	def getConvType(self):
+		return self.convType	
+	def getDescrTag(self):
+		return self.descrTag	
+
 class Application(object):
 	
 	def stopThread(self, t1):
@@ -127,12 +136,15 @@ class Application(object):
 		else:
 			CodeTag =  "%s" % (tag)
 
+# Tag Name
+		if len(convHash) > 0:				
+			if CodeTag in convHash:
+				CodeTag = CodeTag + " {" + convHash[CodeTag].getDescrTag().strip() + "}"
 # Hex Tag
 		if self.bHexRapr.get() == True:
 			CodeTag = CodeTag +  " [%s] " % (taghex)
 
 # OffSet
-
 		CodeTag = CodeTag + " offset [%s]" % (startByte)
 
 		appo=self.readAsn1(filea)
@@ -194,6 +206,15 @@ class Application(object):
 
 		return 0
 
+	def convModeAction(self):
+		if self.bConvMode.get() == False:
+			self.selConv.config(state=DISABLED)
+			self.convFile.config(state=DISABLED)
+			convHash.clear()
+			self.convFile.delete(0, 'end')
+		else:
+			self.selConv.config(state=NORMAL)
+
 # Tk Interface Definicion
 	def __init__(self, parent):
 		self.parent= parent
@@ -207,7 +228,9 @@ class Application(object):
 
 # Convertion File 
 		self.selConv = Button(self.content, text="Select Conv File", command=self.ReadConvButton_Click)
+		self.selConv.config(state=DISABLED)
 		self.convFile = Entry(self.content)
+		self.convFile.config(state=DISABLED)
 
 		self.offsetFrom = Label(self.content, text="Offset From")
 		self.offsetTo = Label(self.content, text="Offset To")
@@ -216,12 +239,15 @@ class Application(object):
 
 		self.bTypeTAP = BooleanVar()
 		self.bHexRapr = BooleanVar()
+		self.bConvMode = BooleanVar()
 
 		self.bTypeTAP.set(False)
 		self.bHexRapr.set(False)
+		self.bConvMode.set(False)
 
 		self.typeTAP = Checkbutton(self.content, text="TAP Notation", variable=self.bTypeTAP)
 		self.hexRapr = Checkbutton(self.content, text="Tag Hex Value", variable=self.bHexRapr)
+		self.convMode = Checkbutton(self.content, text="Convertion Tag", variable=self.bConvMode, command=self.convModeAction)
 
 		self.select = Button(self.content, text="Select a File", command=self.ReadButton_Click)
 		self.save = Button(self.content, text="Save on File", command=self.SaveButton_Click)
@@ -230,8 +256,8 @@ class Application(object):
 
 		self.content.grid(column=0, row=0, sticky=(N, S, E, W))
 
-		self.scroll.grid(column=6, row=2, rowspan=6, sticky=(N, S, E, W))
-		self.txtTrad.grid(column=1, row=2, columnspan=5, rowspan=6, sticky=(N, S, E, W))
+		self.scroll.grid(column=6, row=2, rowspan=8, sticky=(N, S, E, W))
+		self.txtTrad.grid(column=1, row=2, columnspan=5, rowspan=8, sticky=(N, S, E, W))
 
 		self.scroll.config(command=self.txtTrad.yview)
 
@@ -251,7 +277,8 @@ class Application(object):
 # Type TAP and Hex Rapr to develop		
 		self.typeTAP.grid(column=0,row=5, sticky=(N, E, W), padx=5, pady=5)
 		self.hexRapr.grid(column=0,row=6, sticky=(N, E, W), padx=5, pady=5)
-		self.bQuit.grid(column=0,row=7, sticky=(S, E, W), padx=5, pady=5)
+		self.convMode.grid(column=0,row=7, sticky=(N, E, W), padx=5, pady=5)
+		self.bQuit.grid(column=0,row=8, sticky=(S, E, W), padx=5, pady=5)
 
 		parent.columnconfigure(0, weight=1)
 		parent.rowconfigure(0, weight=1)
@@ -267,8 +294,9 @@ class Application(object):
 		self.content.rowconfigure(3, weight=0)
 		self.content.rowconfigure(4, weight=0)
 		self.content.rowconfigure(5, weight=0)
-		self.content.rowconfigure(6, weight=1)
+		self.content.rowconfigure(6, weight=0)
 		self.content.rowconfigure(7, weight=1)
+		self.content.rowconfigure(8, weight=1)
 
 		self.parent.title(titleApp)
 
@@ -290,10 +318,27 @@ class Application(object):
 			return False
 
 	def ReadConvButton_Click(self):
+		flagErr = False
 		filenameconv = filedialog.askopenfilename()
 		if len(filenameconv) > 0:	
 			if os.path.isfile(filenameconv):
-				self.convFile.insert(0,os.path.basename(filenameconv))
+				filerconv=open(filenameconv,"r")
+				for line in filerconv:
+					values = line.split("|")
+					if len(values) != 3:
+						self.popup_msg("Wrong line <" + line + "> not have 3 fields separated by '|'.")
+						flagErr = True
+						break	
+					else:
+						convHash[values[0]] = tagType(values[1],values[2])
+				filerconv.close()	
+
+# Set File Conversion file
+				if flagErr == False:
+					self.convFile.config(state=NORMAL)
+					self.convFile.insert(0,os.path.basename(filenameconv))
+					self.convFile.config(state=DISABLED)
+					self.popup_msg("Loaded " + str(len(convHash)) + " Tag Informations.")
 
 	def ReadButton_Click(self):
 		if (len(self.offsetEntryF.get()) > 0 and self.is_number(self.offsetEntryF.get()) == False) or (len(self.offsetEntryT.get()) > 0 and self.is_number(self.offsetEntryT.get()) == False):
@@ -350,6 +395,12 @@ class Application(object):
 		self.txtTrad.delete(1.0, END)
 		self.bTypeTAP.set(False)
 		self.bHexRapr.set(False)
+		self.convFile.config(state=NORMAL)
+		self.convFile.delete(0, 'end')
+		convHash.clear(); # remove all entries in Hash Table
+		self.selConv.config(state=DISABLED)
+		self.convFile.config(state=DISABLED)
+		self.bConvMode.set(False)
 
 	def Quit(self):
 		self.parent.destroy()
@@ -364,6 +415,7 @@ else:
 	fileicon = os.path.join(sys.prefix, fileicon)
 
 stop_threads = False
+convHash = {}
 root = Tk()
 PyAsn1Tk = Application(root)
 
