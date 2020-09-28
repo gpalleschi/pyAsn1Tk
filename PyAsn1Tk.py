@@ -16,6 +16,7 @@ import time
 # v1.3 - 09/09/2020 - Add scrollbar to TXT widget and Icon
 # v1.4 - 13/09/2020 - Add Threads Managment and Progress Bar
 # v1.5 - 27/09/2020 - Add Stop Button during reading file
+# v2.0 - Add Convert File
 
 class Application(object):
 	
@@ -204,6 +205,10 @@ class Application(object):
 		self.txtTrad = Text(self.content, relief="sunken", width=50, height=30, yscrollcommand=self.scroll.set)
 #		self.scroll.config(command=self.txtTrad.yview)
 
+# Convertion File 
+		self.selConv = Button(self.content, text="Select Conv File", command=self.ReadConvButton_Click)
+		self.convFile = Entry(self.content)
+
 		self.offsetFrom = Label(self.content, text="Offset From")
 		self.offsetTo = Label(self.content, text="Offset To")
 		self.offsetEntryF = Entry(self.content)
@@ -225,24 +230,28 @@ class Application(object):
 
 		self.content.grid(column=0, row=0, sticky=(N, S, E, W))
 
-		self.scroll.grid(column=6, row=1, rowspan=6, sticky=(N, S, E, W))
-		self.txtTrad.grid(column=1, row=1, columnspan=5, rowspan=6, sticky=(N, S, E, W))
+		self.scroll.grid(column=6, row=2, rowspan=6, sticky=(N, S, E, W))
+		self.txtTrad.grid(column=1, row=2, columnspan=5, rowspan=6, sticky=(N, S, E, W))
 
 		self.scroll.config(command=self.txtTrad.yview)
 
-# Offset Managment to develop
-		self.offsetFrom.grid(column=2,row=0, padx=5, pady=5)
-		self.offsetEntryF.grid(column=3,row=0, padx=5, pady=5)
-		self.offsetTo.grid(column=4,row=0,padx=5, pady=5) 
-		self.offsetEntryT.grid(column=5,row=0,padx=5, pady=5)
+# Dispose Conv File Managment
+		self.selConv.grid(column=2,row=0,sticky=(N, E, W),padx=5,pady=5)
+		self.convFile.grid(column=3,row=0,columnspan=3,sticky=(N, E, W),padx=5,pady=5)
 
-		self.select.grid(column=0,row=1, sticky=(N, E, W), padx=5, pady=5)
-		self.save.grid(column=0,row=2, sticky=(N, E, W), padx=5, pady=5)
-		self.cancel.grid(column=0,row=3, sticky=(N, E, W), padx=5, pady=5)
+# Offset Managment to develop
+		self.offsetFrom.grid(column=2,row=1, padx=5, pady=5)
+		self.offsetEntryF.grid(column=3,row=1, padx=5, pady=5)
+		self.offsetTo.grid(column=4,row=1,padx=5, pady=5) 
+		self.offsetEntryT.grid(column=5,row=1,padx=5, pady=5)
+
+		self.select.grid(column=0,row=2, sticky=(N, E, W), padx=5, pady=5)
+		self.save.grid(column=0,row=3, sticky=(N, E, W), padx=5, pady=5)
+		self.cancel.grid(column=0,row=4, sticky=(N, E, W), padx=5, pady=5)
 # Type TAP and Hex Rapr to develop		
-		self.typeTAP.grid(column=0,row=4, sticky=(N, E, W), padx=5, pady=5)
-		self.hexRapr.grid(column=0,row=5, sticky=(N, E, W), padx=5, pady=5)
-		self.bQuit.grid(column=0,row=6, sticky=(S, E, W), padx=5, pady=5)
+		self.typeTAP.grid(column=0,row=5, sticky=(N, E, W), padx=5, pady=5)
+		self.hexRapr.grid(column=0,row=6, sticky=(N, E, W), padx=5, pady=5)
+		self.bQuit.grid(column=0,row=7, sticky=(S, E, W), padx=5, pady=5)
 
 		parent.columnconfigure(0, weight=1)
 		parent.rowconfigure(0, weight=1)
@@ -257,8 +266,9 @@ class Application(object):
 		self.content.rowconfigure(2, weight=0)
 		self.content.rowconfigure(3, weight=0)
 		self.content.rowconfigure(4, weight=0)
-		self.content.rowconfigure(5, weight=1)
+		self.content.rowconfigure(5, weight=0)
 		self.content.rowconfigure(6, weight=1)
+		self.content.rowconfigure(7, weight=1)
 
 		self.parent.title(titleApp)
 
@@ -277,7 +287,13 @@ class Application(object):
 			int(value)
 			return True
 		except:
-			return False		
+			return False
+
+	def ReadConvButton_Click(self):
+		filenameconv = filedialog.askopenfilename()
+		if len(filenameconv) > 0:	
+			if os.path.isfile(filenameconv):
+				self.convFile.insert(0,os.path.basename(filenameconv))
 
 	def ReadButton_Click(self):
 		if (len(self.offsetEntryF.get()) > 0 and self.is_number(self.offsetEntryF.get()) == False) or (len(self.offsetEntryT.get()) > 0 and self.is_number(self.offsetEntryT.get()) == False):
@@ -339,7 +355,7 @@ class Application(object):
 		self.parent.destroy()
 		root.destroy()
 
-titleApp = 'PyAsn1Tk 1.5'
+titleApp = 'PyAsn1Tk 2.0'
 fileicon = 'icon\pyAsn1Tk.ico'
 
 if not hasattr(sys, "frozen"):
