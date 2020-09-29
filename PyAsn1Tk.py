@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
+import codecs
 import os.path
 import os, sys
 
@@ -28,7 +29,21 @@ class tagType:
 		return self.descrTag	
 
 class Application(object):
-	
+
+#Function to convert values in A(Ascii) N(Number) or B(Binary)
+	def convValueFromHex(self, valueHex, convType):
+		valueConvToRet=valueHex
+		if convType == "A":
+			valueConvToRet=codecs.decode(codecs.decode(valueHex,'hex'),'ascii')
+		if convType == "N":
+			valueConvToRet=str(int(valueHex,16))
+		if convType == "B":
+			end_length = len(valueHex) * 4
+			hex_as_int = int(valueHex, 16)
+			hex_as_binary = bin(hex_as_int)
+			valueConvToRet = hex_as_binary[2:].zfill(end_length)
+		return valueConvToRet
+
 	def stopThread(self, t1):
 		global stop_threads
 		stop_threads = True
@@ -53,11 +68,8 @@ class Application(object):
 		while t1.isAlive() is True:
 			progress['value'] = fileasn1.tell()*100/filedim
 			t1.join(timeout=1)
-#			print("join t1 %s con timeout 1 Thread %d tell fileasn1 %d" % (t1.isAlive(), threading.active_count(),fileasn1.tell()))
-#		print("close fileasn1 %d - %s Threads %d" % (fileasn1.tell(),t1.isAlive(),threading.active_count()))
 		progress['value'] = fileasn1.tell()*100/filedim
 		fileasn1.close()
-#		print("exit progress_file")
 		win.destroy()
 
 	def limpia(self):
@@ -129,6 +141,9 @@ class Application(object):
 				nextbis=nextbis & 0xff
 				tag = (tag << 7) | ( nextbis & 127)
 
+# OffSet
+		offSet = "%010d" % (startByte)
+
 # Tag rappresentation
 
 		if self.bTypeTAP.get() == False:
@@ -136,16 +151,32 @@ class Application(object):
 		else:
 			CodeTag =  "%s" % (tag)
 
+		global CodeTagToDisplay
+		tagSplit = CodeTagToDisplay.split(".")
+		if len(tagSplit[0]) > 0 and len(tagSplit) > 1:
+			for ind in range(iLevel):
+				if ind > 0:
+					CodeTagToDisplay = CodeTagToDisplay + "." + tagSplit[ind]
+				else:
+					CodeTagToDisplay = tagSplit[ind]
+		if iLevel > 0:			
+			CodeTagToDisplay = CodeTagToDisplay + "." + CodeTag
+		else:
+			CodeTagToDisplay = CodeTag
 # Tag Name
 		if len(convHash) > 0:				
 			if CodeTag in convHash:
-				CodeTag = CodeTag + " {" + convHash[CodeTag].getDescrTag().strip() + "}"
+				CodeTagToDisplayR = "[" + CodeTagToDisplay + "] {" + convHash[CodeTag].getDescrTag().strip() + "}"
+			else:
+				CodeTagToDisplayR = "[" + CodeTagToDisplay + "]"	
+		else:
+			CodeTagToDisplayR = "[" + CodeTagToDisplay + "]"	
+
 # Hex Tag
 		if self.bHexRapr.get() == True:
 			CodeTag = CodeTag +  " [%s] " % (taghex)
 
-# OffSet
-		CodeTag = CodeTag + " offset [%s]" % (startByte)
+
 
 		appo=self.readAsn1(filea)
 		if appo == '':
@@ -175,24 +206,31 @@ class Application(object):
 						length=(length<<8) | next
 			else:
 				length = -1
-		sIndent=""        
-		for i in range(iLevel):
-			sIndent="\t%s" % sIndent
+		
+		#sIndent=""        
+		#for i in range(iLevel):
+		#	sIndent="\t%s" % sIndent
 
+# OffSet
+		offSet = offSet + ":%03d" % (iLevel+1)
 
 		sTagToPrint=""
 		if length < 0:
-			sTagToPrint="%s%s length : indefinite" % (sIndent,CodeTag)
+			sTagToPrint="%s %s length : indefinite" % (offSet,CodeTagToDisplayR)
 		else:
-			sTagToPrint="%s%s length : %d" % (sIndent,CodeTag,length)
+			sTagToPrint="%s %s length : %d" % (offSet,CodeTagToDisplayR,length)
 
 		if flag == "true" :
 			value = self.GetPrimitiveValue(filea,length)
-			self.txtTrad.insert(INSERT,"%s Hex Value <%s>\n" % (sTagToPrint,value))
+			if len(convHash) > 0:	
+				convHash[CodeTag].getDescrTag().strip()
+				self.txtTrad.insert(INSERT,"%s \"%s\"h Value(%s)%s\n" % (sTagToPrint,value,self.convValueFromHex(value,convHash[CodeTag].getConvType()),convHash[CodeTag].getConvType()))
+			else:	
+				self.txtTrad.insert(INSERT,"%s \"%s\"h\n" % (sTagToPrint,value))
 		else:
 			self.txtTrad.insert(INSERT,"%s\n" % sTagToPrint)
 
-			iLevel = iLevel + 1
+		iLevel = iLevel + 1
 		while ( ((length > 0) and ((filea.tell()) - startByte + 1) <= length) or ((length < 0) and self.CtrlInfinitiveEnd(filea) == 0) ):
 			global stop_threads
 			if stop_threads == True:
@@ -201,8 +239,7 @@ class Application(object):
 				break
 			if self.getTag(filea,iLevel,offSetTo):
 				break
-
-		iLevel=iLevel-1
+		iLevel = iLevel - 1
 
 		return 0
 
@@ -251,6 +288,7 @@ class Application(object):
 
 		self.select = Button(self.content, text="Select a File", command=self.ReadButton_Click)
 		self.save = Button(self.content, text="Save on File", command=self.SaveButton_Click)
+		self.save.config(state=DISABLED)
 		self.cancel = Button(self.content, text="Clear All", command=self.ClearButton_Click)
 		self.bQuit = Button(self.content, text="Quit",command=self.Quit)
 
@@ -330,6 +368,14 @@ class Application(object):
 						flagErr = True
 						break	
 					else:
+						if values[1] != "A" and values[1] != "B" and values[1] != "N" and values[1] != "H":
+							self.popup_msg("Wrong line <" + line + "> convertion type no correct admited only A, B, N or H.")
+							flagErr = True
+							break	
+						if len(values[2]) == 0:	
+							self.popup_msg("Wrong line <" + line + "> description is not present.")
+							flagErr = True
+							break	
 						convHash[values[0]] = tagType(values[1],values[2])
 				filerconv.close()	
 
@@ -366,6 +412,7 @@ class Application(object):
 						if offSetFrom > 0:
 							fileasn1.seek(offSetFrom)
 						file_stats = os.stat(filename)	
+						self.save.config(state=NORMAL)
 						self.txtTrad.insert(INSERT,	"ASN1 FILE %s SIZE : %d\n\n" % (os.path.basename(filename),file_stats.st_size))
 #						self.getTag(fileasn1,iLevel,offSetTo)
 # Start Thread
@@ -399,6 +446,7 @@ class Application(object):
 		self.convFile.delete(0, 'end')
 		convHash.clear(); # remove all entries in Hash Table
 		self.selConv.config(state=DISABLED)
+		self.save.config(state=DISABLED)
 		self.convFile.config(state=DISABLED)
 		self.bConvMode.set(False)
 
@@ -414,6 +462,7 @@ if not hasattr(sys, "frozen"):
 else:  
 	fileicon = os.path.join(sys.prefix, fileicon)
 
+CodeTagToDisplay = ""
 stop_threads = False
 convHash = {}
 root = Tk()
