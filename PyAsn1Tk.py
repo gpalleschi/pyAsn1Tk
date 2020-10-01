@@ -19,6 +19,7 @@ import time
 # v1.5 - 27/09/2020 - Add Stop Button during reading file
 # v2.0 - Add Convert File
 # v2.1 - Bug Fixing in Convertion
+# v2.1.1 - Bug Fixing in GUI
 
 class tagType:
 	def __init__(self, convType, descrTag):
@@ -315,10 +316,10 @@ class Application(object):
 		self.convFile.grid(column=3,row=0,columnspan=3,sticky=(N, E, W),padx=5,pady=5)
 
 # Offset Managment to develop
-		self.offsetFrom.grid(column=2,row=1, padx=5, pady=5)
-		self.offsetEntryF.grid(column=3,row=1, padx=5, pady=5)
-		self.offsetTo.grid(column=4,row=1,padx=5, pady=5) 
-		self.offsetEntryT.grid(column=5,row=1,padx=5, pady=5)
+		self.offsetFrom.grid(column=2,row=1, sticky=(N, E, W), padx=5, pady=5)
+		self.offsetEntryF.grid(column=3,row=1, sticky=(N, E, W), padx=5, pady=5)
+		self.offsetTo.grid(column=4,row=1,sticky=(N, E, W), padx=5, pady=5) 
+		self.offsetEntryT.grid(column=5,row=1,sticky=(N, E, W), padx=5, pady=5)
 
 		self.select.grid(column=0,row=2, sticky=(N, E, W), padx=5, pady=5)
 		self.save.grid(column=0,row=3, sticky=(N, E, W), padx=5, pady=5)
@@ -468,7 +469,7 @@ class Application(object):
 		self.parent.destroy()
 		root.destroy()
 
-titleApp = 'PyAsn1Tk 2.1'
+titleApp = 'PyAsn1Tk 2.1.1'
 fileicon = 'icon\pyAsn1Tk.ico'
 
 if not hasattr(sys, "frozen"):
