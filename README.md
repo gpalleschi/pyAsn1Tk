@@ -1,6 +1,8 @@
-<img src="icon/pyAsn1Tk.ico" alt="Kitten"
-	title="A cute kitten" width="100" height="100" />
-# pyAsn1Tk 
+<div style=”border: 1px solid #000″>
+	<img src="icon/pyAsn1Tk.ico" alt="pyAsn1Tk"
+		title="pyAsn1Tk" width="70" height="70" align="left"/>
+	<h1 align="left">pyAsn1Tk</h1>	
+</div>		
 
 ## Description
 
@@ -8,6 +10,7 @@
 
 ![image](https://drive.google.com/uc?export=view&id=1R08lLw_LtcVjt0q3bVw45XZQl_KL2HDo)  
 
+You can use a convertion file *\{See TAG312 and RAP15 CONV_FILE in project [ASN.1-Reader](https://github.com/gpalleschi/ASN.1-Reader)\}*. 
 It's present a pyAsn1Tk.exe in /dist directory created for windows environment.
 
 ## Prerequisites

@@ -18,6 +18,7 @@ import time
 # v1.4 - 13/09/2020 - Add Threads Managment and Progress Bar
 # v1.5 - 27/09/2020 - Add Stop Button during reading file
 # v2.0 - Add Convert File
+# v2.1 - Bug Fixing in Convertion
 
 class tagType:
 	def __init__(self, convType, descrTag):
@@ -33,15 +34,18 @@ class Application(object):
 #Function to convert values in A(Ascii) N(Number) or B(Binary)
 	def convValueFromHex(self, valueHex, convType):
 		valueConvToRet=valueHex
-		if convType == "A":
-			valueConvToRet=codecs.decode(codecs.decode(valueHex,'hex'),'ascii')
-		if convType == "N":
-			valueConvToRet=str(int(valueHex,16))
-		if convType == "B":
-			end_length = len(valueHex) * 4
-			hex_as_int = int(valueHex, 16)
-			hex_as_binary = bin(hex_as_int)
-			valueConvToRet = hex_as_binary[2:].zfill(end_length)
+		try:
+			if convType == "A" and len(valueHex) > 0:
+				valueConvToRet=codecs.decode(codecs.decode(valueHex,'hex'),'ascii')
+			if convType == "N" and len(valueHex) > 0:
+				valueConvToRet=str(int(valueHex,16))
+			if convType == "B" and len(valueHex) > 0:
+				end_length = len(valueHex) * 4
+				hex_as_int = int(valueHex, 16)
+				hex_as_binary = bin(hex_as_int)
+				valueConvToRet = hex_as_binary[2:].zfill(end_length)
+		except:
+			valueConvToRet="Error in Convertion"
 		return valueConvToRet
 
 	def stopThread(self, t1):
@@ -176,8 +180,6 @@ class Application(object):
 		if self.bHexRapr.get() == True:
 			CodeTag = CodeTag +  " [%s] " % (taghex)
 
-
-
 		appo=self.readAsn1(filea)
 		if appo == '':
 			return 1
@@ -224,7 +226,14 @@ class Application(object):
 			value = self.GetPrimitiveValue(filea,length)
 			if len(convHash) > 0:	
 				convHash[CodeTag].getDescrTag().strip()
-				self.txtTrad.insert(INSERT,"%s \"%s\"h Value(%s)%s\n" % (sTagToPrint,value,self.convValueFromHex(value,convHash[CodeTag].getConvType()),convHash[CodeTag].getConvType()))
+				valueConverted = self.convValueFromHex(value,convHash[CodeTag].getConvType())
+				self.txtTrad.insert(INSERT,"%s \"%s\"h Value(" % (sTagToPrint,value))
+				if valueConverted.startswith("Error"):
+					self.txtTrad.insert(INSERT,"%s" % valueConverted,"red")
+				else:
+					self.txtTrad.insert(INSERT,"%s" % valueConverted)
+					
+				self.txtTrad.insert(INSERT,")%s\n" % convHash[CodeTag].getConvType())	 
 			else:	
 				self.txtTrad.insert(INSERT,"%s \"%s\"h\n" % (sTagToPrint,value))
 		else:
@@ -245,10 +254,11 @@ class Application(object):
 
 	def convModeAction(self):
 		if self.bConvMode.get() == False:
-			self.selConv.config(state=DISABLED)
-			self.convFile.config(state=DISABLED)
-			convHash.clear()
+			self.convFile.config(state=NORMAL)
 			self.convFile.delete(0, 'end')
+			self.convFile.config(state=DISABLED)
+			self.selConv.config(state=DISABLED)
+			convHash.clear()
 		else:
 			self.selConv.config(state=NORMAL)
 
@@ -261,6 +271,7 @@ class Application(object):
 # Vertical (y) Scroll Bar
 		self.scroll = Scrollbar(self.content)
 		self.txtTrad = Text(self.content, relief="sunken", width=50, height=30, yscrollcommand=self.scroll.set)
+		self.txtTrad.tag_config("red", background="white", foreground="red")
 #		self.scroll.config(command=self.txtTrad.yview)
 
 # Convertion File 
@@ -355,6 +366,7 @@ class Application(object):
 		except:
 			return False
 
+# Function on Select Conv File
 	def ReadConvButton_Click(self):
 		flagErr = False
 		filenameconv = filedialog.askopenfilename()
@@ -442,6 +454,8 @@ class Application(object):
 		self.txtTrad.delete(1.0, END)
 		self.bTypeTAP.set(False)
 		self.bHexRapr.set(False)
+		self.offsetEntryF.delete(0,'end')
+		self.offsetEntryT.delete(0,'end')
 		self.convFile.config(state=NORMAL)
 		self.convFile.delete(0, 'end')
 		convHash.clear(); # remove all entries in Hash Table
@@ -454,7 +468,7 @@ class Application(object):
 		self.parent.destroy()
 		root.destroy()
 
-titleApp = 'PyAsn1Tk 2.0'
+titleApp = 'PyAsn1Tk 2.1'
 fileicon = 'icon\pyAsn1Tk.ico'
 
 if not hasattr(sys, "frozen"):
