@@ -20,6 +20,7 @@ import time
 # v2.0 - Add Convert File
 # v2.1 - Bug Fixing in Convertion
 # v2.1.1 - Bug Fixing in GUI
+# v2.2 - Search Function
 
 class tagType:
 	def __init__(self, convType, descrTag):
@@ -32,7 +33,7 @@ class tagType:
 
 class Application(object):
 
-#Function to convert values in A(Ascii) N(Number) or B(Binary)
+# Function to convert values in A(Ascii) N(Number) or B(Binary)
 	def convValueFromHex(self, valueHex, convType):
 		valueConvToRet=valueHex
 		try:
@@ -49,12 +50,28 @@ class Application(object):
 			valueConvToRet="Error in Convertion"
 		return valueConvToRet
 
+	def getXCenter(self):
+		root_x = root.winfo_rootx()
+		dimx = root.winfo_width()
+		return root_x + int(dimx/2)
+
+	def getYCenter(self):
+		root_y = root.winfo_rooty()
+		dimy = root.winfo_height()
+		return root_y + int(dimy/2)
+
+# Function to stop thread
 	def stopThread(self, t1):
 		global stop_threads
 		stop_threads = True
 
+# Function for progress Bar
 	def progress_file(self, t1, fileasn1, filedim):
 		win = Toplevel(root)
+		win_x = self.getXCenter()
+		win_y = self.getYCenter()
+		win.geometry(f'+{win_x}+{win_y}')
+		win.grab_set()
 		win.resizable(height = False, width = False)
 		win.title("Reading File")
 		win.rowconfigure(0, weight=1)
@@ -77,9 +94,11 @@ class Application(object):
 		fileasn1.close()
 		win.destroy()
 
+# Function to delete txtTrad
 	def limpia(self):
 		self.txtTrad.delete(1.0, END)
 
+# Function to check infinite End 
 	def CtrlInfinitiveEnd(self, filea):
 		curpos=filea.tell()
 		for i in range(2):
@@ -90,6 +109,7 @@ class Application(object):
 		filea.seek(curpos)
 		return 0
 
+# Function to get primitive value
 	def GetPrimitiveValue(self,filea, lenValue):
 		sretvalue=""
 		ind=0
@@ -98,6 +118,7 @@ class Application(object):
 			ind = ind + 1
 		return sretvalue    
 
+# Function to read Asn1 file
 	def readAsn1(self,filea):
 		aByte=""
 		try:
@@ -109,6 +130,7 @@ class Application(object):
 			self.txtTrad.insert(INSERT,"I/O Error (%s): %s" % (e.errno, e.strerror))
 		return aByte
 
+# Recursive Function to read Tag
 	def getTag(self, filea, iLevel, offSetTo):
 
 #		print("In GetTag")
@@ -253,6 +275,7 @@ class Application(object):
 
 		return 0
 
+# Function to manage change checkbox conv mode
 	def convModeAction(self):
 		if self.bConvMode.get() == False:
 			self.convFile.config(state=NORMAL)
@@ -262,6 +285,30 @@ class Application(object):
 			convHash.clear()
 		else:
 			self.selConv.config(state=NORMAL)
+
+# Function to search
+	def Search_Click(self):
+		#remove tag 'found' from index 1 to END 
+		global currentPos
+		self.txtTrad.tag_remove('found', '1.0', END)  
+		s = self.txtSearch.get()  
+		if s: 
+			idx = currentPos
+			while 1: 
+            #searches for desried string from index 1 
+				idx = self.txtTrad.search(s, idx, nocase=1,stopindex=END)  
+				if not idx:
+					self.popup_msg("Not Found")
+					currentPos = '1.0'
+					break
+              
+            #last index sum of current index and 
+            #length of text 
+				lastidx = '%s+%dc' % (idx, len(s))  
+            #overwrite 'Found' at idx 
+				self.txtTrad.tag_add('found', idx, lastidx)  
+				currentPos = lastidx 
+				break
 
 # Tk Interface Definicion
 	def __init__(self, parent):
@@ -273,6 +320,7 @@ class Application(object):
 		self.scroll = Scrollbar(self.content)
 		self.txtTrad = Text(self.content, relief="sunken", width=50, height=30, yscrollcommand=self.scroll.set)
 		self.txtTrad.tag_config("red", background="white", foreground="red")
+		self.txtTrad.tag_config("found", background="yellow", foreground="black")
 #		self.scroll.config(command=self.txtTrad.yview)
 
 # Convertion File 
@@ -281,10 +329,18 @@ class Application(object):
 		self.convFile = Entry(self.content)
 		self.convFile.config(state=DISABLED)
 
+# Offset
 		self.offsetFrom = Label(self.content, text="Offset From")
 		self.offsetTo = Label(self.content, text="Offset To")
 		self.offsetEntryF = Entry(self.content)
 		self.offsetEntryT = Entry(self.content)
+
+# Search
+
+		self.txtSearch = Entry(self.content)
+		self.buttSearch = Button(self.content, text="Search", command=self.Search_Click)
+
+# Options
 
 		self.bTypeTAP = BooleanVar()
 		self.bHexRapr = BooleanVar()
@@ -306,29 +362,34 @@ class Application(object):
 
 		self.content.grid(column=0, row=0, sticky=(N, S, E, W))
 
-		self.scroll.grid(column=6, row=2, rowspan=8, sticky=(N, S, E, W))
-		self.txtTrad.grid(column=1, row=2, columnspan=5, rowspan=8, sticky=(N, S, E, W))
+		self.scroll.grid(column=6, row=3, rowspan=8, sticky=(N, S, E, W))
+		self.txtTrad.grid(column=1, row=3, columnspan=5, rowspan=8, sticky=(N, S, E, W))
 
 		self.scroll.config(command=self.txtTrad.yview)
 
 # Dispose Conv File Managment
-		self.selConv.grid(column=2,row=0,sticky=(N, E, W),padx=5,pady=5)
-		self.convFile.grid(column=3,row=0,columnspan=3,sticky=(N, E, W),padx=5,pady=5)
+		self.selConv.grid(column=1,row=0,sticky=(N, E, W),padx=5,pady=5)
+		self.convFile.grid(column=2,row=0,columnspan=4,sticky=(N, E, W),padx=5,pady=5)
 
 # Offset Managment to develop
-		self.offsetFrom.grid(column=2,row=1, sticky=(N, E, W), padx=5, pady=5)
-		self.offsetEntryF.grid(column=3,row=1, sticky=(N, E, W), padx=5, pady=5)
-		self.offsetTo.grid(column=4,row=1,sticky=(N, E, W), padx=5, pady=5) 
-		self.offsetEntryT.grid(column=5,row=1,sticky=(N, E, W), padx=5, pady=5)
+		self.offsetFrom.grid(column=1,row=1, sticky=(N, E, W), padx=5, pady=5)
+		self.offsetEntryF.grid(column=2,row=1, sticky=(N, E, W), padx=5, pady=5)
+		self.offsetTo.grid(column=3,row=1,sticky=(N, E, W), padx=5, pady=5) 
+		self.offsetEntryT.grid(column=4,row=1,sticky=(N, E, W), padx=5, pady=5)
+# Search 
+		self.buttSearch.grid(column=1,row=2,sticky=(N, E, W), padx=5, pady=5)
+		self.txtSearch.grid(column=2,row=2,columnspan=4,sticky=(N, E, W), padx=5, pady=5)
+		
 
-		self.select.grid(column=0,row=2, sticky=(N, E, W), padx=5, pady=5)
-		self.save.grid(column=0,row=3, sticky=(N, E, W), padx=5, pady=5)
-		self.cancel.grid(column=0,row=4, sticky=(N, E, W), padx=5, pady=5)
+		self.select.grid(column=0,row=3, sticky=(N, E, W), padx=5, pady=5)
+		self.save.grid(column=0,row=4, sticky=(N, E, W), padx=5, pady=5)
+		self.cancel.grid(column=0,row=5, sticky=(N, E, W), padx=5, pady=5)
+
 # Type TAP and Hex Rapr to develop		
-		self.typeTAP.grid(column=0,row=5, sticky=(N, E, W), padx=5, pady=5)
-		self.hexRapr.grid(column=0,row=6, sticky=(N, E, W), padx=5, pady=5)
-		self.convMode.grid(column=0,row=7, sticky=(N, E, W), padx=5, pady=5)
-		self.bQuit.grid(column=0,row=8, sticky=(S, E, W), padx=5, pady=5)
+		self.typeTAP.grid(column=0,row=6, sticky=(N, W), padx=5, pady=5)
+		self.hexRapr.grid(column=0,row=7, sticky=(N, W), padx=5, pady=5)
+		self.convMode.grid(column=0,row=8, sticky=(N, W), padx=5, pady=5)
+		self.bQuit.grid(column=0,row=9, sticky=(S, E, W), padx=5, pady=5)
 
 		parent.columnconfigure(0, weight=1)
 		parent.rowconfigure(0, weight=1)
@@ -345,20 +406,32 @@ class Application(object):
 		self.content.rowconfigure(4, weight=0)
 		self.content.rowconfigure(5, weight=0)
 		self.content.rowconfigure(6, weight=0)
-		self.content.rowconfigure(7, weight=1)
+		self.content.rowconfigure(7, weight=0)
 		self.content.rowconfigure(8, weight=1)
 
 		self.parent.title(titleApp)
 
 	def popup_msg(self, msg):
 		win = Toplevel()
+		win_x = self.getXCenter()
+		win_y = self.getYCenter()
+		win.geometry(f'+{win_x}+{win_y}')
+		win.grab_set()
+		win.resizable(height = False, width = False)
 		win.wm_title("Error Msg")
 
 		l = Label(win, text=msg)
-		l.grid(row=0, column=0)
-
+		l.grid(row=1, column=1)
 		b = Button(win, text="Okay", command=win.destroy)
-		b.grid(row=1, column=0)
+		b.grid(row=2, column=1)
+
+		win.rowconfigure(0, weight=1)
+		win.rowconfigure(1, weight=1)
+		win.rowconfigure(2, weight=1)
+		win.rowconfigure(3, weight=1)
+		win.columnconfigure(0,weight=1)
+		win.columnconfigure(1,weight=1)
+		win.columnconfigure(2,weight=1)
 
 	def is_number(self, value):
 		try:
@@ -416,6 +489,9 @@ class Application(object):
 				else:
 					offSetTo = 0
 
+				self.currentPos = '1.0'
+				self.txtSearch.delete(0,'end')
+
 				filename = filedialog.askopenfilename()
 				if len(filename) > 0:	
 					if os.path.isfile(filename):
@@ -464,12 +540,15 @@ class Application(object):
 		self.save.config(state=DISABLED)
 		self.convFile.config(state=DISABLED)
 		self.bConvMode.set(False)
+		self.currentPos = '1.0'
+		self.txtSearch.delete(0,'end')
 
 	def Quit(self):
 		self.parent.destroy()
 		root.destroy()
 
-titleApp = 'PyAsn1Tk 2.1.1'
+currentPos = '1.0'
+titleApp = 'PyAsn1Tk 2.2'
 fileicon = 'icon\pyAsn1Tk.ico'
 
 if not hasattr(sys, "frozen"):
