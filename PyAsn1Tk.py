@@ -21,6 +21,7 @@ import time
 # v2.1 - Bug Fixing in Convertion
 # v2.1.1 - Bug Fixing in GUI
 # v2.2 - Search Function
+# v2.3 - Bugfix in Search Function
 
 class tagType:
 	def __init__(self, convType, descrTag):
@@ -300,7 +301,11 @@ class Application(object):
 				if not idx:
 					self.popup_msg("Not Found")
 					currentPos = '1.0'
+					self.txtTrad.mark_set("insert", currentPos)
+					self.txtTrad.see("insert")
 					break
+				self.txtTrad.mark_set("insert", idx)
+				self.txtTrad.see("insert")
               
             #last index sum of current index and 
             #length of text 
@@ -548,7 +553,7 @@ class Application(object):
 		root.destroy()
 
 currentPos = '1.0'
-titleApp = 'PyAsn1Tk 2.2'
+titleApp = 'PyAsn1Tk 2.3'
 fileicon = 'icon\pyAsn1Tk.ico'
 
 if not hasattr(sys, "frozen"):
