@@ -22,6 +22,7 @@ import time
 # v2.1.1 - Bug Fixing in GUI
 # v2.2 - Search Function
 # v2.3 - Bugfix in Search Function
+# v2.4 - Regex in search function
 
 class tagType:
 	def __init__(self, convType, descrTag):
@@ -82,13 +83,16 @@ class Application(object):
 		win.columnconfigure(0, weight=1)
 		win.columnconfigure(2, weight=1)
 		progress = ttk.Progressbar(win, orient = HORIZONTAL, 
-            length = 100, mode = 'determinate') 
+            length = 100, mode = 'determinate')
+		progRead = Label(win, text="Readed 0 Bytes on " + str(filedim))
 		progress.grid(row=1, column=1)
+		progRead.grid(row=2, column=1)
 		b = Button(win, text="Stop", command= lambda: self.stopThread(t1, ))
 		b.grid(row=3, column=1)
 		progress['value'] = 0
 		t1.join(timeout=1)
 		while t1.isAlive() is True:
+			progRead.config(text = "Readed " + str(fileasn1.tell()) + " Bytes on " + str(filedim)) 
 			progress['value'] = fileasn1.tell()*100/filedim
 			t1.join(timeout=1)
 		progress['value'] = fileasn1.tell()*100/filedim
@@ -297,7 +301,7 @@ class Application(object):
 			idx = currentPos
 			while 1: 
             #searches for desried string from index 1 
-				idx = self.txtTrad.search(s, idx, nocase=1,stopindex=END)  
+				idx = self.txtTrad.search(s, idx, nocase=1,stopindex=END,regexp=True)  
 				if not idx:
 					self.popup_msg("Not Found")
 					currentPos = '1.0'
@@ -553,7 +557,7 @@ class Application(object):
 		root.destroy()
 
 currentPos = '1.0'
-titleApp = 'PyAsn1Tk 2.3'
+titleApp = 'PyAsn1Tk 2.4'
 fileicon = 'icon\pyAsn1Tk.ico'
 
 if not hasattr(sys, "frozen"):
