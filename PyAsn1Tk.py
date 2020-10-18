@@ -23,6 +23,7 @@ import time
 # v2.2 - Search Function
 # v2.3 - Bugfix in Search Function
 # v2.4 - Regex in search function
+# v2.5 - Indentation Function
 
 class tagType:
 	def __init__(self, convType, descrTag):
@@ -192,17 +193,23 @@ class Application(object):
 				else:
 					CodeTagToDisplay = tagSplit[ind]
 		if iLevel > 0:			
+	
 			CodeTagToDisplay = CodeTagToDisplay + "." + CodeTag
 		else:
 			CodeTagToDisplay = CodeTag
+# Indentation			
+		sIndentation = ""
+		if self.bIndentMode.get() == True:
+			for y in range(iLevel):
+				sIndentation = "   " + sIndentation			
 # Tag Name
 		if len(convHash) > 0:				
 			if CodeTag in convHash:
-				CodeTagToDisplayR = "[" + CodeTagToDisplay + "] {" + convHash[CodeTag].getDescrTag().strip() + "}"
+				CodeTagToDisplayR = sIndentation + "[" + CodeTagToDisplay + "] {" + convHash[CodeTag].getDescrTag().strip() + "}"
 			else:
-				CodeTagToDisplayR = "[" + CodeTagToDisplay + "]"	
+				CodeTagToDisplayR = sIndentation + "[" + CodeTagToDisplay + "]"	
 		else:
-			CodeTagToDisplayR = "[" + CodeTagToDisplay + "]"	
+			CodeTagToDisplayR = sIndentation + "[" + CodeTagToDisplay + "]"	
 
 # Hex Tag
 		if self.bHexRapr.get() == True:
@@ -249,6 +256,8 @@ class Application(object):
 			sTagToPrint="%s %s length : indefinite" % (offSet,CodeTagToDisplayR)
 		else:
 			sTagToPrint="%s %s length : %d" % (offSet,CodeTagToDisplayR,length)
+
+
 
 		if flag == "true" :
 			value = self.GetPrimitiveValue(filea,length)
@@ -354,14 +363,17 @@ class Application(object):
 		self.bTypeTAP = BooleanVar()
 		self.bHexRapr = BooleanVar()
 		self.bConvMode = BooleanVar()
+		self.bIndentMode = BooleanVar()
 
 		self.bTypeTAP.set(False)
 		self.bHexRapr.set(False)
 		self.bConvMode.set(False)
+		self.bIndentMode.set(True)
 
 		self.typeTAP = Checkbutton(self.content, text="TAP Notation", variable=self.bTypeTAP)
 		self.hexRapr = Checkbutton(self.content, text="Tag Hex Value", variable=self.bHexRapr)
 		self.convMode = Checkbutton(self.content, text="Convertion Tag", variable=self.bConvMode, command=self.convModeAction)
+		self.indent = Checkbutton(self.content, text="Tag Indentation", variable=self.bIndentMode)
 
 		self.select = Button(self.content, text="Select a File", command=self.ReadButton_Click)
 		self.save = Button(self.content, text="Save on File", command=self.SaveButton_Click)
@@ -398,7 +410,8 @@ class Application(object):
 		self.typeTAP.grid(column=0,row=6, sticky=(N, W), padx=5, pady=5)
 		self.hexRapr.grid(column=0,row=7, sticky=(N, W), padx=5, pady=5)
 		self.convMode.grid(column=0,row=8, sticky=(N, W), padx=5, pady=5)
-		self.bQuit.grid(column=0,row=9, sticky=(S, E, W), padx=5, pady=5)
+		self.indent.grid(column=0,row=9, sticky=(N, W), padx=5, pady=5)
+		self.bQuit.grid(column=0,row=10, sticky=(S, E, W), padx=5, pady=5)
 
 		parent.columnconfigure(0, weight=1)
 		parent.rowconfigure(0, weight=1)
@@ -416,7 +429,8 @@ class Application(object):
 		self.content.rowconfigure(5, weight=0)
 		self.content.rowconfigure(6, weight=0)
 		self.content.rowconfigure(7, weight=0)
-		self.content.rowconfigure(8, weight=1)
+		self.content.rowconfigure(8, weight=0)
+		self.content.rowconfigure(9, weight=1)
 
 		self.parent.title(titleApp)
 
@@ -557,7 +571,7 @@ class Application(object):
 		root.destroy()
 
 currentPos = '1.0'
-titleApp = 'PyAsn1Tk 2.4'
+titleApp = 'PyAsn1Tk 2.5'
 fileicon = 'icon\pyAsn1Tk.ico'
 
 if not hasattr(sys, "frozen"):
