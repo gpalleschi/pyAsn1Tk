@@ -6,11 +6,11 @@
 
 ## Description
 
-**A visual Asn1 BER reader written in Python using TKinter embedded package. This tool permits read and decode a binary file in ASN1 BER codification and saving visual result in a txt file. **
+**A visual Asn1 BER reader written in Python using TKinter embedded package. This tool permits read and decode a binary file in ASN1 BER codification and saving visual result in a txt file.**
 
 ![image](https://drive.google.com/uc?export=view&id=1R08lLw_LtcVjt0q3bVw45XZQl_KL2HDo)  
 
-You can use a convertion file *\{See TAG312 and RAP15 CONV_FILE in project [ASN.1-Reader](https://github.com/gpalleschi/ASN.1-Reader)\}*.  
+You can use a convertion file *\{Se TAG312 and RAP15 CONV_FILE in project [ASN.1-Reader](https://github.com/gpalleschi/ASN.1-Reader)\}*.  
 
 Conversion file is a text file and it has this format `<Tag Name>|<Conversion Type>|<Desc Tag>[|Regular Expression]`  
 

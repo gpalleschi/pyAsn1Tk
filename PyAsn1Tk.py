@@ -26,6 +26,7 @@ import time
 # v2.4 - Regex in search function
 # v2.5 - Indentation Function
 # v2.6 - Introduce Regular expression to check value in convertion file
+# v2.7 - Bugs Fix for Asn1 files with multiple record and infinitive Length
 
 class tagType:
 	def __init__(self, convType, descrTag, exprRegCtrl):
@@ -115,7 +116,7 @@ class Application(object):
 		for i in range(2):
 			if self.readAsn1(filea) != "00":
 				break
-		if i == 2:
+		if i+1 == 2:
 			return 1
 		filea.seek(curpos)
 		return 0
@@ -140,6 +141,7 @@ class Application(object):
 			print("I/O Error (%s): %s" % (e.errno, e.strerror))
 			self.txtTrad.insert(INSERT,"I/O Error (%s): %s" % (e.errno, e.strerror))
 		return aByte
+
 
 # Recursive Function to read Tag
 	def getTag(self, filea, iLevel, offSetTo):
@@ -300,6 +302,14 @@ class Application(object):
 		iLevel = iLevel - 1
 
 		return 0
+
+# Function to read File Asn1
+	def startReadAsn1(self, filea, iLevel, offSetTo):
+		retCode = 0
+		while retCode == 0:
+			retCode = self.getTag(filea, iLevel, offSetTo)
+			if offSetTo != 0 and filea.tell() >= offSetTo:
+				break
 
 # Function to manage change checkbox conv mode
 	def convModeAction(self):
@@ -542,11 +552,11 @@ class Application(object):
 						file_stats = os.stat(filename)	
 						self.save.config(state=NORMAL)
 						self.txtTrad.insert(INSERT,	"ASN1 FILE %s SIZE : %d\n\n" % (os.path.basename(filename),file_stats.st_size))
-#						self.getTag(fileasn1,iLevel,offSetTo)
 # Start Thread
 						global stop_threads
 						stop_threads = False
-						t1 = threading.Thread(target=self.getTag, args=(fileasn1,iLevel,offSetTo, ), daemon=None)
+#						t1 = threading.Thread(target=self.getTag, args=(fileasn1,iLevel,offSetTo, ), daemon=None)
+						t1 = threading.Thread(target=self.startReadAsn1, args=(fileasn1,iLevel,offSetTo, ), daemon=None)
 						t1.start()
 						t2 = threading.Thread(target=self.progress_file, args=(t1,fileasn1,file_stats.st_size, ))
 						t2.start()
@@ -587,7 +597,7 @@ class Application(object):
 		root.destroy()
 
 currentPos = '1.0'
-titleApp = 'PyAsn1Tk 2.6'
+titleApp = 'PyAsn1Tk 2.7'
 fileicon = 'icon\pyAsn1Tk.ico'
 
 if not hasattr(sys, "frozen"):
