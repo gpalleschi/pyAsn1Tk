@@ -4,6 +4,7 @@ from tkinter import ttk
 import codecs
 import os.path
 import os, sys
+import re
 
 import threading
 import time
@@ -24,15 +25,19 @@ import time
 # v2.3 - Bugfix in Search Function
 # v2.4 - Regex in search function
 # v2.5 - Indentation Function
+# v2.6 - Introduce Regular expression to check value in convertion file
 
 class tagType:
-	def __init__(self, convType, descrTag):
+	def __init__(self, convType, descrTag, exprRegCtrl):
 		self.convType = convType
 		self.descrTag = descrTag
+		self.exprRegCtrl = exprRegCtrl
 	def getConvType(self):
 		return self.convType	
 	def getDescrTag(self):
 		return self.descrTag	
+	def getExprRegCtrl(self):
+		return self.exprRegCtrl	
 
 class Application(object):
 
@@ -257,8 +262,6 @@ class Application(object):
 		else:
 			sTagToPrint="%s %s length : %d" % (offSet,CodeTagToDisplayR,length)
 
-
-
 		if flag == "true" :
 			value = self.GetPrimitiveValue(filea,length)
 			if len(convHash) > 0:	
@@ -270,7 +273,16 @@ class Application(object):
 				else:
 					self.txtTrad.insert(INSERT,"%s" % valueConverted)
 					
-				self.txtTrad.insert(INSERT,")%s\n" % convHash[CodeTag].getConvType())	 
+				self.txtTrad.insert(INSERT,")%s" % convHash[CodeTag].getConvType())	 
+				regExprValue = convHash[CodeTag].getExprRegCtrl().strip()
+				if len(regExprValue) != 0 and len(valueConverted) != 0 and valueConverted.startswith("Error") != True:
+					result = re.match(regExprValue,valueConverted)
+					if result:
+						self.txtTrad.insert(INSERT," CHECK OK","green")
+					else:
+						self.txtTrad.insert(INSERT," CHECK KO regexpr<%s>" % regExprValue,"red")	
+				self.txtTrad.insert(INSERT,"\n")
+
 			else:	
 				self.txtTrad.insert(INSERT,"%s \"%s\"h\n" % (sTagToPrint,value))
 		else:
@@ -338,6 +350,7 @@ class Application(object):
 		self.scroll = Scrollbar(self.content)
 		self.txtTrad = Text(self.content, relief="sunken", width=50, height=30, yscrollcommand=self.scroll.set)
 		self.txtTrad.tag_config("red", background="white", foreground="red")
+		self.txtTrad.tag_config("green", background="white", foreground="green")
 		self.txtTrad.tag_config("found", background="yellow", foreground="black")
 #		self.scroll.config(command=self.txtTrad.yview)
 
@@ -472,7 +485,7 @@ class Application(object):
 				filerconv=open(filenameconv,"r")
 				for line in filerconv:
 					values = line.split("|")
-					if len(values) != 3:
+					if len(values) != 3 and len(values) != 4:
 						self.popup_msg("Wrong line <" + line + "> not have 3 fields separated by '|'.")
 						flagErr = True
 						break	
@@ -485,7 +498,10 @@ class Application(object):
 							self.popup_msg("Wrong line <" + line + "> description is not present.")
 							flagErr = True
 							break	
-						convHash[values[0]] = tagType(values[1],values[2])
+						if len(values) == 3:
+							convHash[values[0]] = tagType(values[1],values[2],"")
+						else:	
+							convHash[values[0]] = tagType(values[1],values[2],values[3])
 				filerconv.close()	
 
 # Set File Conversion file
@@ -571,7 +587,7 @@ class Application(object):
 		root.destroy()
 
 currentPos = '1.0'
-titleApp = 'PyAsn1Tk 2.5'
+titleApp = 'PyAsn1Tk 2.6'
 fileicon = 'icon\pyAsn1Tk.ico'
 
 if not hasattr(sys, "frozen"):

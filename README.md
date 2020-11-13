@@ -10,8 +10,18 @@
 
 ![image](https://drive.google.com/uc?export=view&id=1R08lLw_LtcVjt0q3bVw45XZQl_KL2HDo)  
 
-You can use a convertion file *\{See TAG312 and RAP15 CONV_FILE in project [ASN.1-Reader](https://github.com/gpalleschi/ASN.1-Reader)\}*. 
-It's present a pyAsn1Tk.exe in /dist directory created for windows environment.
+You can use a convertion file *\{See TAG312 and RAP15 CONV_FILE in project [ASN.1-Reader](https://github.com/gpalleschi/ASN.1-Reader)\}*.  
+
+Conversion file is a text file and it has this format `<Tag Name>|<Conversion Type>|<Desc Tag>[|Regular Expression]`  
+
+Field|Description
+--------|----
+`<Tag Name>`|Tag Name in format Id-Class or only Class (TAP Notation)
+`<Conversion Type>`|Represent type of convertion to apply :<br>A for Hex to Ascii<br>B for Hex to Binary<br>N for Hex to Number
+`<Desc Tag>`|Tag Description Name to show for tag
+`[Regular Expression]`|Optional field to control value of a primitive Tag converted.<br>If expression is true will be showed CHECK OK in green after convertion<br>instead will be showed CHECK KO regexpr`<regularexpression>` in red
+
+It's present a pyAsn1Tk.exe in /dist directory created for windows environment.  
 
 ## Prerequisites
 
